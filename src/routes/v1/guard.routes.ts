@@ -7,6 +7,7 @@ import {
   updateGuardStatus,
   getGuardMe,
 } from '../../controllers/guard.controller';
+import shiftRoutes from './shift.routes';
 import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/authorize.middleware';
 
@@ -14,6 +15,9 @@ const router = Router();
 
 // Guard self-service profile endpoint
 router.get('/me', authenticate, requireRole('guard'), getGuardMe);
+
+// Guard Shift Configuration sub-routes: /api/v1/guards/:guardId/shift
+router.use('/:guardId/shift', shiftRoutes);
 
 // Provider Admin endpoints
 router.get('/', authenticate, requireRole('provider_admin'), getGuards);

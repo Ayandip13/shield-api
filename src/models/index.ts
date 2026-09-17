@@ -1,3 +1,5 @@
-// Base model registry placeholder
-// Feature models (Building, User, Guard, Committee, Attendance, EntryLog) will be exported here in future milestones.
-export {};
+export * from './user.model';
+export * from './provider.model';
+export * from './building.model';
+export * from './shift.model';
+export * from './attendance.model';

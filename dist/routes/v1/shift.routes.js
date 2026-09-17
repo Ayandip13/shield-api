@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const shift_controller_1 = require("../../controllers/shift.controller");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const authorize_middleware_1 = require("../../middleware/authorize.middleware");
+const router = (0, express_1.Router)({ mergeParams: true });
+router.get('/', auth_middleware_1.authenticate, (0, authorize_middleware_1.requireRole)('provider_admin', 'guard'), shift_controller_1.getGuardShift);
+router.put('/', auth_middleware_1.authenticate, (0, authorize_middleware_1.requireRole)('provider_admin'), shift_controller_1.updateGuardShift);
+exports.default = router;
