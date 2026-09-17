@@ -16,6 +16,7 @@ const buildingSchema = new mongoose_1.Schema({
     },
     address: {
         type: String,
+        required: [true, 'Building address is required'],
         trim: true,
     },
     contactPhone: {

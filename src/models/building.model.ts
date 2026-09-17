@@ -3,7 +3,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface IBuilding extends Document {
   providerId: Types.ObjectId;
   name: string;
-  address?: string;
+  address: string;
   contactPhone?: string;
   contactEmail?: string;
   isActive: boolean;
@@ -26,6 +26,7 @@ const buildingSchema = new Schema<IBuilding>(
     },
     address: {
       type: String,
+      required: [true, 'Building address is required'],
       trim: true,
     },
     contactPhone: {
