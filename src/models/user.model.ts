@@ -11,6 +11,10 @@ export interface IUser extends Document {
   role: UserRole;
   providerId: Types.ObjectId;
   buildingId?: Types.ObjectId;
+  employeeId?: string;
+  joiningDate?: Date;
+  monthlySalary?: number;
+  designation?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +62,21 @@ const userSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: 'Building',
       index: true,
+    },
+    employeeId: {
+      type: String,
+      trim: true,
+    },
+    joiningDate: {
+      type: Date,
+    },
+    monthlySalary: {
+      type: Number,
+      min: [0, 'Monthly salary cannot be negative'],
+    },
+    designation: {
+      type: String,
+      trim: true,
     },
     isActive: {
       type: Boolean,

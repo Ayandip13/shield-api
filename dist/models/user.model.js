@@ -47,6 +47,21 @@ const userSchema = new mongoose_1.Schema({
         ref: 'Building',
         index: true,
     },
+    employeeId: {
+        type: String,
+        trim: true,
+    },
+    joiningDate: {
+        type: Date,
+    },
+    monthlySalary: {
+        type: Number,
+        min: [0, 'Monthly salary cannot be negative'],
+    },
+    designation: {
+        type: String,
+        trim: true,
+    },
     isActive: {
         type: Boolean,
         default: true,
