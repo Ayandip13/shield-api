@@ -56,4 +56,6 @@ attendanceSchema.index({ guardId: 1 }, {
 attendanceSchema.index({ providerId: 1, date: 1 });
 attendanceSchema.index({ buildingId: 1, date: 1 });
 attendanceSchema.index({ guardId: 1, date: 1 });
+attendanceSchema.index({ providerId: 1, checkOut: 1 });
+attendanceSchema.index({ buildingId: 1, checkOut: 1 });
 exports.Attendance = (0, mongoose_1.model)('Attendance', attendanceSchema);

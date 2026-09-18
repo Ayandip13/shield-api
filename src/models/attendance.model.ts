@@ -77,5 +77,7 @@ attendanceSchema.index(
 attendanceSchema.index({ providerId: 1, date: 1 });
 attendanceSchema.index({ buildingId: 1, date: 1 });
 attendanceSchema.index({ guardId: 1, date: 1 });
+attendanceSchema.index({ providerId: 1, checkOut: 1 });
+attendanceSchema.index({ buildingId: 1, checkOut: 1 });
 
 export const Attendance = model<IAttendance>('Attendance', attendanceSchema);
