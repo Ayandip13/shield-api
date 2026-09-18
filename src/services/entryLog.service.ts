@@ -88,7 +88,7 @@ export class EntryLogService {
   }
 
   /**
-   * Guard marks entry as exited (Any active guard in the same building can close)
+   * Guard marks entry as exited (Conditional update to prevent exit race conditions)
    */
   static async markExit(guardUserId: string, entryLogId: string): Promise<IEntryLog> {
     const guard = await this.verifyActiveGuard(guardUserId);
@@ -112,14 +112,23 @@ export class EntryLogService {
       throw ApiError.forbidden('Access denied. Entry log belongs to another building.', 'BUILDING_ACCESS_DENIED');
     }
 
-    if (log.exitTime !== null && log.exitTime !== undefined) {
-      throw ApiError.badRequest('Entry record has already been marked as exited', 'ALREADY_EXITED');
+    // Conditional atomic exit update
+    const updatedLog = await EntryLog.findOneAndUpdate(
+      {
+        _id: log._id,
+        exitTime: null,
+      },
+      {
+        $set: { exitTime: new Date() },
+      },
+      { new: true }
+    );
+
+    if (!updatedLog) {
+      throw ApiError.badRequest('Entry record has already been marked as exited.', 'ALREADY_EXITED');
     }
 
-    log.exitTime = new Date();
-    await log.save();
-
-    return (await EntryLog.findById(log._id)
+    return (await EntryLog.findById(updatedLog._id)
       .populate('guardId', 'name employeeId designation')
       .populate('buildingId', 'name address'))!;
   }

@@ -8,6 +8,7 @@ import {
 } from '../../controllers/building.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/authorize.middleware';
+import { validateObjectId } from '../../middleware/validateObjectId.middleware';
 
 const router = Router();
 
@@ -16,8 +17,8 @@ router.use(authenticate, requireRole('provider_admin'));
 
 router.get('/', getBuildings);
 router.post('/', createBuilding);
-router.get('/:id', getBuildingById);
-router.patch('/:id', updateBuilding);
-router.patch('/:id/status', updateBuildingStatus);
+router.get('/:id', validateObjectId('id'), getBuildingById);
+router.patch('/:id', validateObjectId('id'), updateBuilding);
+router.patch('/:id/status', validateObjectId('id'), updateBuildingStatus);
 
 export default router;

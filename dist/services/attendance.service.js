@@ -64,23 +64,24 @@ class AttendanceService {
         }
     }
     /**
-     * Guard Duty Check-Out
+     * Guard Duty Check-Out (Conditional atomic update to prevent race conditions)
      */
     static async checkOut(guardUserId, notes) {
         const guard = await this.verifyGuardUser(guardUserId);
-        const openRecord = await attendance_model_1.Attendance.findOne({
+        const updateFields = {
+            checkOut: new Date(),
+        };
+        if (notes && typeof notes === 'string' && notes.trim()) {
+            updateFields.notes = notes.trim();
+        }
+        const updatedRecord = await attendance_model_1.Attendance.findOneAndUpdate({
             guardId: guard._id,
             checkOut: null,
-        });
-        if (!openRecord) {
-            throw apiError_1.ApiError.badRequest('No active check-in session found. You must check in before checking out.', 'NO_OPEN_ATTENDANCE');
+        }, { $set: updateFields }, { new: true });
+        if (!updatedRecord) {
+            throw apiError_1.ApiError.badRequest('No active check-in session found or check-out already completed.', 'NO_OPEN_ATTENDANCE');
         }
-        openRecord.checkOut = new Date();
-        if (notes && typeof notes === 'string') {
-            openRecord.notes = notes.trim();
-        }
-        await openRecord.save();
-        return (await attendance_model_1.Attendance.findById(openRecord._id)
+        return (await attendance_model_1.Attendance.findById(updatedRecord._id)
             .populate('guardId', 'name email phone employeeId designation')
             .populate('buildingId', 'name address'));
     }

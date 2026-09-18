@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { createApp } from './app';
 import { envConfig } from './config/env.config';
 import { connectDatabase } from './config/database';
@@ -15,16 +16,22 @@ async function startServer() {
   });
 
   // Graceful Shutdown Handler
-  const shutdown = () => {
-    logger.info('Received kill signal, shutting down gracefully...');
-    server.close(() => {
-      logger.info('Closed out remaining connections.');
+  const shutdown = (signal: string) => {
+    logger.info(`Received ${signal} signal, shutting down gracefully...`);
+    server.close(async () => {
+      logger.info('Closed out remaining HTTP connections.');
+      try {
+        await mongoose.connection.close();
+        logger.info('Database connection closed cleanly.');
+      } catch (err) {
+        logger.error('Error closing database connection:', err);
+      }
       process.exit(0);
     });
   };
 
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 startServer().catch((err) => {

@@ -57,7 +57,7 @@ class EntryLogService {
             .populate('buildingId', 'name address'));
     }
     /**
-     * Guard marks entry as exited (Any active guard in the same building can close)
+     * Guard marks entry as exited (Conditional update to prevent exit race conditions)
      */
     static async markExit(guardUserId, entryLogId) {
         const guard = await this.verifyActiveGuard(guardUserId);
@@ -74,12 +74,17 @@ class EntryLogService {
             log.buildingId.toString() !== guardBuildingId) {
             throw apiError_1.ApiError.forbidden('Access denied. Entry log belongs to another building.', 'BUILDING_ACCESS_DENIED');
         }
-        if (log.exitTime !== null && log.exitTime !== undefined) {
-            throw apiError_1.ApiError.badRequest('Entry record has already been marked as exited', 'ALREADY_EXITED');
+        // Conditional atomic exit update
+        const updatedLog = await entryLog_model_1.EntryLog.findOneAndUpdate({
+            _id: log._id,
+            exitTime: null,
+        }, {
+            $set: { exitTime: new Date() },
+        }, { new: true });
+        if (!updatedLog) {
+            throw apiError_1.ApiError.badRequest('Entry record has already been marked as exited.', 'ALREADY_EXITED');
         }
-        log.exitTime = new Date();
-        await log.save();
-        return (await entryLog_model_1.EntryLog.findById(log._id)
+        return (await entryLog_model_1.EntryLog.findById(updatedLog._id)
             .populate('guardId', 'name employeeId designation')
             .populate('buildingId', 'name address'));
     }

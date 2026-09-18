@@ -9,6 +9,7 @@ import {
 } from '../../controllers/committee.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/authorize.middleware';
+import { validateObjectId } from '../../middleware/validateObjectId.middleware';
 
 const router = Router();
 
@@ -18,8 +19,8 @@ router.get('/me', authenticate, requireRole('committee'), getCommitteeMe);
 // Provider Admin endpoints
 router.get('/', authenticate, requireRole('provider_admin'), getCommitteeMembers);
 router.post('/', authenticate, requireRole('provider_admin'), createCommitteeMember);
-router.get('/:id', authenticate, requireRole('provider_admin'), getCommitteeMemberById);
-router.patch('/:id', authenticate, requireRole('provider_admin'), updateCommitteeMember);
-router.patch('/:id/status', authenticate, requireRole('provider_admin'), updateCommitteeStatus);
+router.get('/:id', authenticate, requireRole('provider_admin'), validateObjectId('id'), getCommitteeMemberById);
+router.patch('/:id', authenticate, requireRole('provider_admin'), validateObjectId('id'), updateCommitteeMember);
+router.patch('/:id/status', authenticate, requireRole('provider_admin'), validateObjectId('id'), updateCommitteeStatus);
 
 export default router;

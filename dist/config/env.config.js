@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.envConfig = void 0;
+exports.validateEnv = validateEnv;
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 // Load environment variables from .env file
@@ -16,4 +17,23 @@ exports.envConfig = {
     corsOrigin: process.env.CORS_ORIGIN || '*',
     jwtSecret: process.env.JWT_SECRET || 'super_secret_dev_jwt_key_secushield_2026',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    trustProxy: process.env.TRUST_PROXY === 'false' ? false : true,
+    rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins
+    loginRateLimitMax: parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '10', 10), // 10 attempts
+    apiRateLimitMax: parseInt(process.env.API_RATE_LIMIT_MAX || '300', 10), // 300 requests
 };
+function validateEnv() {
+    const missing = [];
+    if (!exports.envConfig.mongodbUri)
+        missing.push('MONGODB_URI');
+    if (!exports.envConfig.jwtSecret)
+        missing.push('JWT_SECRET');
+    if (exports.envConfig.isProduction) {
+        if (exports.envConfig.jwtSecret === 'super_secret_dev_jwt_key_secushield_2026') {
+            console.warn('[SECURITY WARNING] Using default JWT secret in production environment!');
+        }
+    }
+    if (missing.length > 0) {
+        throw new Error(`[Fatal] Missing required environment variables: ${missing.join(', ')}`);
+    }
+}

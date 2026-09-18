@@ -37,27 +37,37 @@ export class CommitteeService {
     }
   }
 
-  /**
-   * List committee members for provider
-   */
-  static async getCommitteeMembers(providerId: string, buildingId?: string): Promise<IUser[]> {
+  static async getCommitteeMembers(
+    providerId: string,
+    buildingId?: string,
+    page?: number,
+    limit?: number
+  ): Promise<IUser[]> {
     if (!Types.ObjectId.isValid(providerId)) {
       throw ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
     }
 
-    const query: any = {
+    const queryFilter: any = {
       role: 'committee',
       providerId: new Types.ObjectId(providerId),
     };
 
     if (buildingId) {
       await this.verifyBuildingOwnership(buildingId, providerId);
-      query.buildingId = new Types.ObjectId(buildingId);
+      queryFilter.buildingId = new Types.ObjectId(buildingId);
     }
 
-    return User.find(query)
+    const query = User.find(queryFilter)
       .populate('buildingId', 'name address contactPhone contactEmail')
       .sort({ createdAt: -1 });
+
+    if (page && limit) {
+      const safePage = Math.max(1, page);
+      const safeLimit = Math.min(100, Math.max(1, limit));
+      query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+    }
+
+    return query;
   }
 
   /**

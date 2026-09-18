@@ -17,14 +17,24 @@ export interface UpdateBuildingDto {
 }
 
 export class BuildingService {
-  /**
-   * List all buildings belonging to a specific provider
-   */
-  static async getBuildingsByProvider(providerId: string): Promise<IBuilding[]> {
+  static async getBuildingsByProvider(
+    providerId: string,
+    page?: number,
+    limit?: number
+  ): Promise<IBuilding[]> {
     if (!Types.ObjectId.isValid(providerId)) {
       throw ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
     }
-    return Building.find({ providerId: new Types.ObjectId(providerId) }).sort({ createdAt: -1 });
+
+    const query = Building.find({ providerId: new Types.ObjectId(providerId) }).sort({ createdAt: -1 });
+
+    if (page && limit) {
+      const safePage = Math.max(1, page);
+      const safeLimit = Math.min(100, Math.max(1, limit));
+      query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+    }
+
+    return query;
   }
 
   /**

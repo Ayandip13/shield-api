@@ -88,31 +88,35 @@ export class AttendanceService {
   }
 
   /**
-   * Guard Duty Check-Out
+   * Guard Duty Check-Out (Conditional atomic update to prevent race conditions)
    */
   static async checkOut(guardUserId: string, notes?: string): Promise<IAttendance> {
     const guard = await this.verifyGuardUser(guardUserId);
 
-    const openRecord = await Attendance.findOne({
-      guardId: guard._id,
-      checkOut: null,
-    });
+    const updateFields: any = {
+      checkOut: new Date(),
+    };
+    if (notes && typeof notes === 'string' && notes.trim()) {
+      updateFields.notes = notes.trim();
+    }
 
-    if (!openRecord) {
+    const updatedRecord = await Attendance.findOneAndUpdate(
+      {
+        guardId: guard._id,
+        checkOut: null,
+      },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedRecord) {
       throw ApiError.badRequest(
-        'No active check-in session found. You must check in before checking out.',
+        'No active check-in session found or check-out already completed.',
         'NO_OPEN_ATTENDANCE'
       );
     }
 
-    openRecord.checkOut = new Date();
-    if (notes && typeof notes === 'string') {
-      openRecord.notes = notes.trim();
-    }
-
-    await openRecord.save();
-
-    return (await Attendance.findById(openRecord._id)
+    return (await Attendance.findById(updatedRecord._id)
       .populate('guardId', 'name email phone employeeId designation')
       .populate('buildingId', 'name address'))!;
   }

@@ -21,24 +21,27 @@ class CommitteeService {
             throw apiError_1.ApiError.forbidden('Access denied. Building does not belong to your security provider.', 'PROVIDER_ACCESS_DENIED');
         }
     }
-    /**
-     * List committee members for provider
-     */
-    static async getCommitteeMembers(providerId, buildingId) {
+    static async getCommitteeMembers(providerId, buildingId, page, limit) {
         if (!mongoose_1.Types.ObjectId.isValid(providerId)) {
             throw apiError_1.ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
         }
-        const query = {
+        const queryFilter = {
             role: 'committee',
             providerId: new mongoose_1.Types.ObjectId(providerId),
         };
         if (buildingId) {
             await this.verifyBuildingOwnership(buildingId, providerId);
-            query.buildingId = new mongoose_1.Types.ObjectId(buildingId);
+            queryFilter.buildingId = new mongoose_1.Types.ObjectId(buildingId);
         }
-        return user_model_1.User.find(query)
+        const query = user_model_1.User.find(queryFilter)
             .populate('buildingId', 'name address contactPhone contactEmail')
             .sort({ createdAt: -1 });
+        if (page && limit) {
+            const safePage = Math.max(1, page);
+            const safeLimit = Math.min(100, Math.max(1, limit));
+            query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+        }
+        return query;
     }
     /**
      * Get single committee member by ID

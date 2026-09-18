@@ -22,23 +22,29 @@ class GuardService {
         }
     }
     /**
-     * List all guards for a provider with optional building filter
+     * List all guards for a provider with optional building filter & pagination
      */
-    static async getGuards(providerId, buildingId) {
+    static async getGuards(providerId, buildingId, page, limit) {
         if (!mongoose_1.Types.ObjectId.isValid(providerId)) {
             throw apiError_1.ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
         }
-        const query = {
+        const queryFilter = {
             role: 'guard',
             providerId: new mongoose_1.Types.ObjectId(providerId),
         };
         if (buildingId) {
             await this.verifyBuildingOwnership(buildingId, providerId);
-            query.buildingId = new mongoose_1.Types.ObjectId(buildingId);
+            queryFilter.buildingId = new mongoose_1.Types.ObjectId(buildingId);
         }
-        return user_model_1.User.find(query)
+        const query = user_model_1.User.find(queryFilter)
             .populate('buildingId', 'name address contactPhone contactEmail')
             .sort({ createdAt: -1 });
+        if (page && limit) {
+            const safePage = Math.max(1, page);
+            const safeLimit = Math.min(100, Math.max(1, limit));
+            query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+        }
+        return query;
     }
     /**
      * Get a single guard by ID with tenant security check
@@ -64,6 +70,15 @@ class GuardService {
         const existingUser = await user_model_1.User.findOne({ email: dto.email.toLowerCase() });
         if (existingUser) {
             throw apiError_1.ApiError.badRequest('A user with this email address already exists.', 'DUPLICATE_EMAIL');
+        }
+        if (dto.employeeId) {
+            const existingEmployee = await user_model_1.User.findOne({
+                providerId: new mongoose_1.Types.ObjectId(providerId),
+                employeeId: dto.employeeId.trim(),
+            });
+            if (existingEmployee) {
+                throw apiError_1.ApiError.badRequest('A guard with this employee ID already exists for your provider.', 'DUPLICATE_EMPLOYEE_ID');
+            }
         }
         const guard = await user_model_1.User.create({
             name: dto.name,

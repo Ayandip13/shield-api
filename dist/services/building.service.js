@@ -5,14 +5,17 @@ const mongoose_1 = require("mongoose");
 const building_model_1 = require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
 class BuildingService {
-    /**
-     * List all buildings belonging to a specific provider
-     */
-    static async getBuildingsByProvider(providerId) {
+    static async getBuildingsByProvider(providerId, page, limit) {
         if (!mongoose_1.Types.ObjectId.isValid(providerId)) {
             throw apiError_1.ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
         }
-        return building_model_1.Building.find({ providerId: new mongoose_1.Types.ObjectId(providerId) }).sort({ createdAt: -1 });
+        const query = building_model_1.Building.find({ providerId: new mongoose_1.Types.ObjectId(providerId) }).sort({ createdAt: -1 });
+        if (page && limit) {
+            const safePage = Math.max(1, page);
+            const safeLimit = Math.min(100, Math.max(1, limit));
+            query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+        }
+        return query;
     }
     /**
      * Get a single building with strict tenant isolation check

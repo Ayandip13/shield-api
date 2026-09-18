@@ -46,26 +46,39 @@ export class GuardService {
   }
 
   /**
-   * List all guards for a provider with optional building filter
+   * List all guards for a provider with optional building filter & pagination
    */
-  static async getGuards(providerId: string, buildingId?: string): Promise<IUser[]> {
+  static async getGuards(
+    providerId: string,
+    buildingId?: string,
+    page?: number,
+    limit?: number
+  ): Promise<IUser[]> {
     if (!Types.ObjectId.isValid(providerId)) {
       throw ApiError.badRequest('Invalid provider ID format', 'INVALID_ID');
     }
 
-    const query: any = {
+    const queryFilter: any = {
       role: 'guard',
       providerId: new Types.ObjectId(providerId),
     };
 
     if (buildingId) {
       await this.verifyBuildingOwnership(buildingId, providerId);
-      query.buildingId = new Types.ObjectId(buildingId);
+      queryFilter.buildingId = new Types.ObjectId(buildingId);
     }
 
-    return User.find(query)
+    const query = User.find(queryFilter)
       .populate('buildingId', 'name address contactPhone contactEmail')
       .sort({ createdAt: -1 });
+
+    if (page && limit) {
+      const safePage = Math.max(1, page);
+      const safeLimit = Math.min(100, Math.max(1, limit));
+      query.skip((safePage - 1) * safeLimit).limit(safeLimit);
+    }
+
+    return query;
   }
 
   /**
@@ -104,6 +117,16 @@ export class GuardService {
     const existingUser = await User.findOne({ email: dto.email.toLowerCase() });
     if (existingUser) {
       throw ApiError.badRequest('A user with this email address already exists.', 'DUPLICATE_EMAIL');
+    }
+
+    if (dto.employeeId) {
+      const existingEmployee = await User.findOne({
+        providerId: new Types.ObjectId(providerId),
+        employeeId: dto.employeeId.trim(),
+      });
+      if (existingEmployee) {
+        throw ApiError.badRequest('A guard with this employee ID already exists for your provider.', 'DUPLICATE_EMPLOYEE_ID');
+      }
     }
 
     const guard = await User.create({
