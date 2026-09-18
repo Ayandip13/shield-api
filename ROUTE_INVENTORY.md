@@ -95,3 +95,14 @@ All endpoints are mounted under the `/api/v1` base route and enforce standardize
 | `GET` | `/api/v1/profile` | Authenticated | User profile derived from JWT |
 | `PATCH` | `/api/v1/profile` | Authenticated | Updates personal info (`name`, `phone`) |
 | `PATCH` | `/api/v1/profile/password` | Authenticated | Password change with current password verification |
+
+---
+
+## 10. In-App Notifications (`/api/v1/notifications`)
+| Method | Endpoint | Allowed Roles | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/notifications` | Authenticated | Returns paginated notifications scoped to user's tenant/role |
+| `GET` | `/api/v1/notifications/unread-count` | Authenticated | Returns unread notification count |
+| `PATCH` | `/api/v1/notifications/read-all` | Authenticated | Marks all scoped unread notifications as read |
+| `PATCH` | `/api/v1/notifications/:id/read` | Authenticated | Marks single notification as read |
+

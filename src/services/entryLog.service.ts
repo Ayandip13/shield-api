@@ -4,6 +4,8 @@ import { User } from '../models/user.model';
 import { Building } from '../models/building.model';
 import { ApiError } from '../utils/apiError';
 
+import { NotificationService } from './notification.service';
+
 export interface CreateEntryLogDto {
   personName: string;
   phone?: string;
@@ -82,9 +84,25 @@ export class EntryLogService {
       exitTime: null,
     });
 
-    return (await EntryLog.findById(entryLog._id)
+    const result = (await EntryLog.findById(entryLog._id)
       .populate('guardId', 'name employeeId designation')
       .populate('buildingId', 'name address'))!;
+
+    const bName = result.buildingId && typeof result.buildingId === 'object' && 'name' in result.buildingId
+      ? (result.buildingId as any).name
+      : 'Assigned Building';
+
+    NotificationService.createNotification({
+      providerId: guard.providerId,
+      buildingId: buildingId,
+      type: 'entry_exit',
+      title: 'New Visitor Entry',
+      message: `A ${dto.personType} entry was recorded at ${bName}.`,
+      relatedEntityType: 'EntryLog',
+      relatedEntityId: entryLog._id,
+    });
+
+    return result;
   }
 
   /**

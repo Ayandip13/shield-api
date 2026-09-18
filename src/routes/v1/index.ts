@@ -8,6 +8,7 @@ import attendanceRoutes from './attendance.routes';
 import entryLogRoutes from './entryLog.routes';
 import dashboardRoutes from './dashboard.routes';
 import profileRoutes from './profile.routes';
+import notificationRoutes from './notification.routes';
 
 const v1Router = Router();
 
@@ -22,5 +23,6 @@ v1Router.use('/attendance', attendanceRoutes);
 v1Router.use('/entry-logs', entryLogRoutes);
 v1Router.use('/dashboard', dashboardRoutes);
 v1Router.use('/profile', profileRoutes);
+v1Router.use('/notifications', notificationRoutes);
 
 export default v1Router;

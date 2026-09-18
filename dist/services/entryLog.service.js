@@ -6,6 +6,7 @@ const entryLog_model_1 = require("../models/entryLog.model");
 const user_model_1 = require("../models/user.model");
 const building_model_1 = require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
+const notification_service_1 = require("./notification.service");
 class EntryLogService {
     /**
      * Helper to verify active guard status and building assignment
@@ -52,9 +53,22 @@ class EntryLogService {
             entryTime: new Date(),
             exitTime: null,
         });
-        return (await entryLog_model_1.EntryLog.findById(entryLog._id)
+        const result = (await entryLog_model_1.EntryLog.findById(entryLog._id)
             .populate('guardId', 'name employeeId designation')
             .populate('buildingId', 'name address'));
+        const bName = result.buildingId && typeof result.buildingId === 'object' && 'name' in result.buildingId
+            ? result.buildingId.name
+            : 'Assigned Building';
+        notification_service_1.NotificationService.createNotification({
+            providerId: guard.providerId,
+            buildingId: buildingId,
+            type: 'entry_exit',
+            title: 'New Visitor Entry',
+            message: `A ${dto.personType} entry was recorded at ${bName}.`,
+            relatedEntityType: 'EntryLog',
+            relatedEntityId: entryLog._id,
+        });
+        return result;
     }
     /**
      * Guard marks entry as exited (Conditional update to prevent exit race conditions)

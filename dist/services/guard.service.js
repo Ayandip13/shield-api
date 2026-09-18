@@ -5,6 +5,7 @@ const mongoose_1 = require("mongoose");
 const user_model_1 = require("../models/user.model");
 const building_model_1 = require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
+const notification_service_1 = require("./notification.service");
 class GuardService {
     /**
      * Helper to verify if a building belongs to the provider
@@ -95,6 +96,18 @@ class GuardService {
             isActive: true,
         });
         const populatedGuard = await user_model_1.User.findById(guard._id).populate('buildingId', 'name address contactPhone contactEmail');
+        const bName = populatedGuard?.buildingId && typeof populatedGuard.buildingId === 'object' && 'name' in populatedGuard.buildingId
+            ? populatedGuard.buildingId.name
+            : 'Assigned Building';
+        notification_service_1.NotificationService.createNotification({
+            providerId,
+            buildingId: dto.buildingId,
+            type: 'guard',
+            title: 'Guard Added',
+            message: `A new guard (${dto.name}) has been assigned to ${bName}.`,
+            relatedEntityType: 'User',
+            relatedEntityId: guard._id,
+        });
         return populatedGuard;
     }
     /**
@@ -129,6 +142,15 @@ class GuardService {
         const guard = await this.getGuardById(guardId, providerId);
         guard.isActive = isActive;
         await guard.save();
+        notification_service_1.NotificationService.createNotification({
+            providerId,
+            buildingId: guard.buildingId,
+            type: 'guard',
+            title: 'Guard Status Updated',
+            message: `A guard (${guard.name}) has been ${isActive ? 'reactivated' : 'deactivated'}.`,
+            relatedEntityType: 'User',
+            relatedEntityId: guard._id,
+        });
         return guard;
     }
     /**

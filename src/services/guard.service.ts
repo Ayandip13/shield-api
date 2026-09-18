@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { User, IUser } from '../models/user.model';
 import { Building } from '../models/building.model';
 import { ApiError } from '../utils/apiError';
+import { NotificationService } from './notification.service';
 
 export interface CreateGuardDto {
   name: string;
@@ -148,6 +149,21 @@ export class GuardService {
       'buildingId',
       'name address contactPhone contactEmail'
     );
+
+    const bName = populatedGuard?.buildingId && typeof populatedGuard.buildingId === 'object' && 'name' in populatedGuard.buildingId
+      ? (populatedGuard.buildingId as any).name
+      : 'Assigned Building';
+
+    NotificationService.createNotification({
+      providerId,
+      buildingId: dto.buildingId,
+      type: 'guard',
+      title: 'Guard Added',
+      message: `A new guard (${dto.name}) has been assigned to ${bName}.`,
+      relatedEntityType: 'User',
+      relatedEntityId: guard._id,
+    });
+
     return populatedGuard!;
   }
 
@@ -193,6 +209,17 @@ export class GuardService {
     const guard = await this.getGuardById(guardId, providerId);
     guard.isActive = isActive;
     await guard.save();
+
+    NotificationService.createNotification({
+      providerId,
+      buildingId: guard.buildingId,
+      type: 'guard',
+      title: 'Guard Status Updated',
+      message: `A guard (${guard.name}) has been ${isActive ? 'reactivated' : 'deactivated'}.`,
+      relatedEntityType: 'User',
+      relatedEntityId: guard._id,
+    });
+
     return guard;
   }
 

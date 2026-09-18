@@ -4,6 +4,7 @@ exports.BuildingService = void 0;
 const mongoose_1 = require("mongoose");
 const building_model_1 = require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
+const notification_service_1 = require("./notification.service");
 class BuildingService {
     static async getBuildingsByProvider(providerId, page, limit) {
         if (!mongoose_1.Types.ObjectId.isValid(providerId)) {
@@ -49,6 +50,15 @@ class BuildingService {
             contactEmail: dto.contactEmail || undefined,
             isActive: true,
         });
+        notification_service_1.NotificationService.createNotification({
+            providerId,
+            buildingId: building._id,
+            type: 'building',
+            title: 'Building Created',
+            message: `New building '${dto.name}' was registered.`,
+            relatedEntityType: 'Building',
+            relatedEntityId: building._id,
+        });
         return building;
     }
     /**
@@ -74,6 +84,15 @@ class BuildingService {
         const building = await this.getBuildingById(buildingId, providerId);
         building.isActive = isActive;
         await building.save();
+        notification_service_1.NotificationService.createNotification({
+            providerId,
+            buildingId: building._id,
+            type: 'building',
+            title: 'Building Status Updated',
+            message: `Building '${building.name}' status set to ${isActive ? 'active' : 'inactive'}.`,
+            relatedEntityType: 'Building',
+            relatedEntityId: building._id,
+        });
         return building;
     }
 }

@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Building, IBuilding } from '../models/building.model';
 import { ApiError } from '../utils/apiError';
+import { NotificationService } from './notification.service';
 
 export interface CreateBuildingDto {
   name: string;
@@ -78,6 +79,16 @@ export class BuildingService {
       isActive: true,
     });
 
+    NotificationService.createNotification({
+      providerId,
+      buildingId: building._id,
+      type: 'building',
+      title: 'Building Created',
+      message: `New building '${dto.name}' was registered.`,
+      relatedEntityType: 'Building',
+      relatedEntityId: building._id,
+    });
+
     return building;
   }
 
@@ -111,6 +122,17 @@ export class BuildingService {
     const building = await this.getBuildingById(buildingId, providerId);
     building.isActive = isActive;
     await building.save();
+
+    NotificationService.createNotification({
+      providerId,
+      buildingId: building._id,
+      type: 'building',
+      title: 'Building Status Updated',
+      message: `Building '${building.name}' status set to ${isActive ? 'active' : 'inactive'}.`,
+      relatedEntityType: 'Building',
+      relatedEntityId: building._id,
+    });
+
     return building;
   }
 }

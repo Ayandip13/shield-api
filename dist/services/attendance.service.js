@@ -8,6 +8,7 @@ const building_model_1 = require("../models/building.model");
 const shift_service_1 = require("./shift.service");
 const apiError_1 = require("../utils/apiError");
 const date_util_1 = require("../utils/date.util");
+const notification_service_1 = require("./notification.service");
 class AttendanceService {
     /**
      * Helper to verify guard user eligibility
@@ -52,9 +53,19 @@ class AttendanceService {
                 checkOut: null,
                 status: 'present',
             });
-            return (await attendance_model_1.Attendance.findById(attendance._id)
+            const result = (await attendance_model_1.Attendance.findById(attendance._id)
                 .populate('guardId', 'name email phone employeeId designation')
                 .populate('buildingId', 'name address'));
+            notification_service_1.NotificationService.createNotification({
+                providerId: guard.providerId,
+                buildingId: guard.buildingId,
+                type: 'attendance',
+                title: 'Guard Checked In',
+                message: `${guard.name} checked in for today's shift.`,
+                relatedEntityType: 'Attendance',
+                relatedEntityId: attendance._id,
+            });
+            return result;
         }
         catch (err) {
             if (err.code === 11000 || err.message?.includes('duplicate key')) {
@@ -81,9 +92,19 @@ class AttendanceService {
         if (!updatedRecord) {
             throw apiError_1.ApiError.badRequest('No active check-in session found or check-out already completed.', 'NO_OPEN_ATTENDANCE');
         }
-        return (await attendance_model_1.Attendance.findById(updatedRecord._id)
+        const result = (await attendance_model_1.Attendance.findById(updatedRecord._id)
             .populate('guardId', 'name email phone employeeId designation')
             .populate('buildingId', 'name address'));
+        notification_service_1.NotificationService.createNotification({
+            providerId: guard.providerId,
+            buildingId: guard.buildingId,
+            type: 'attendance',
+            title: 'Guard Checked Out',
+            message: `${guard.name} checked out from today's shift.`,
+            relatedEntityType: 'Attendance',
+            relatedEntityId: updatedRecord._id,
+        });
+        return result;
     }
     /**
      * Get Guard's own attendance history
