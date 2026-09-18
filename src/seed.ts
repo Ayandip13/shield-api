@@ -7,12 +7,19 @@ import { logger } from './utils/logger';
 
 async function seedDatabase(): Promise<void> {
   try {
+    if (envConfig.isProduction && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+      logger.error('CRITICAL: Seeding is blocked in production environment!');
+      logger.error('To force seeding in production, set ALLOW_PRODUCTION_SEED=true.');
+      process.exit(1);
+    }
+
     logger.info('Connecting to MongoDB for database seeding...');
     await mongoose.connect(envConfig.mongodbUri);
     logger.info('Connected to MongoDB.');
 
     // Clear existing development collections
     logger.info('Clearing existing data...');
+
     await User.deleteMany({});
     await Building.deleteMany({});
     await Provider.deleteMany({});

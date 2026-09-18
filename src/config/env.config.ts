@@ -25,13 +25,20 @@ export function validateEnv(): void {
   if (!envConfig.jwtSecret) missing.push('JWT_SECRET');
 
   if (envConfig.isProduction) {
-    if (envConfig.jwtSecret === 'super_secret_dev_jwt_key_secushield_2026') {
-      console.warn('[SECURITY WARNING] Using default JWT secret in production environment!');
+    if (!process.env.JWT_SECRET || envConfig.jwtSecret === 'super_secret_dev_jwt_key_secushield_2026') {
+      missing.push('JWT_SECRET (cannot use dev default in production)');
+    }
+    if (!process.env.MONGODB_URI || envConfig.mongodbUri.includes('localhost') || envConfig.mongodbUri.includes('127.0.0.1')) {
+      missing.push('MONGODB_URI (cannot use localhost in production)');
+    }
+    if (!process.env.CORS_ORIGIN || envConfig.corsOrigin === '*') {
+      console.warn('[SECURITY WARNING] CORS_ORIGIN is set to wildcard (*) in production. Consider configuring specific allowed origins.');
     }
   }
 
   if (missing.length > 0) {
-    throw new Error(`[Fatal] Missing required environment variables: ${missing.join(', ')}`);
+    throw new Error(`[Fatal] Environment validation failed for production: ${missing.join(', ')}`);
   }
 }
+
 

@@ -11,6 +11,11 @@ const user_model_1 = require("./models/user.model");
 const logger_1 = require("./utils/logger");
 async function seedDatabase() {
     try {
+        if (env_config_1.envConfig.isProduction && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+            logger_1.logger.error('CRITICAL: Seeding is blocked in production environment!');
+            logger_1.logger.error('To force seeding in production, set ALLOW_PRODUCTION_SEED=true.');
+            process.exit(1);
+        }
         logger_1.logger.info('Connecting to MongoDB for database seeding...');
         await mongoose_1.default.connect(env_config_1.envConfig.mongodbUri);
         logger_1.logger.info('Connected to MongoDB.');
