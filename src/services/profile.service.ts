@@ -1,5 +1,4 @@
-import { User } from '../models/user.model';
-import { RefreshToken } from '../models/refreshToken.model';
+import { User, RefreshToken } from '../models';
 import '../models/provider.model';
 import '../models/building.model';
 import { ApiError } from '../utils/apiError';

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CommitteeService } from '../services/committee.service';
-import { RefreshToken } from '../models/refreshToken.model';
+import { RefreshToken } from '../models';
 import { ApiResponse } from '../utils/apiResponse';
 import { ApiError } from '../utils/apiError';
 

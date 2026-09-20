@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { User } from '../models/user.model';
-import { RefreshToken } from '../models/refreshToken.model';
+import { User, RefreshToken } from '../models';
 import {
   generateAccessToken,
   generateOpaqueRefreshToken,

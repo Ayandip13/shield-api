@@ -9,8 +9,7 @@ exports.logout = logout;
 exports.logoutAll = logoutAll;
 exports.getMe = getMe;
 const crypto_1 = __importDefault(require("crypto"));
-const user_model_1 = require("../models/user.model");
-const refreshToken_model_1 = require("../models/refreshToken.model");
+const models_1 = require("../models");
 const jwt_util_1 = require("../utils/jwt.util");
 const env_config_1 = require("../config/env.config");
 const apiError_1 = require("../utils/apiError");
@@ -30,7 +29,7 @@ async function login(req, res, next) {
         if (!emailRegex.test(normalizedEmail)) {
             throw apiError_1.ApiError.badRequest('Invalid email format', 'INVALID_EMAIL_FORMAT');
         }
-        const user = await user_model_1.User.findOne({ email: normalizedEmail }).select('+passwordHash');
+        const user = await models_1.User.findOne({ email: normalizedEmail }).select('+passwordHash');
         if (!user) {
             throw apiError_1.ApiError.unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
         }
@@ -48,7 +47,7 @@ async function login(req, res, next) {
         const familyId = crypto_1.default.randomUUID();
         const expiresAt = new Date(Date.now() + (0, jwt_util_1.parseDurationToMs)(env_config_1.envConfig.refreshTokenExpiresIn));
         // Save refresh session in DB
-        await refreshToken_model_1.RefreshToken.create({
+        await models_1.RefreshToken.create({
             userId: user._id,
             tokenHash,
             familyId,
@@ -82,19 +81,19 @@ async function refresh(req, res, next) {
             throw apiError_1.ApiError.badRequest('Refresh token is required', 'MISSING_REFRESH_TOKEN');
         }
         const presentedTokenHash = (0, jwt_util_1.hashToken)(refreshToken);
-        const tokenRecord = await refreshToken_model_1.RefreshToken.findOne({ tokenHash: presentedTokenHash });
+        const tokenRecord = await models_1.RefreshToken.findOne({ tokenHash: presentedTokenHash });
         // REUSE DETECTION: If token exists but has already been revoked/rotated
         if (tokenRecord && tokenRecord.revokedAt) {
             logger_1.logger.warn(`[SECURITY WARNING] Refresh token reuse detected for family ${tokenRecord.familyId}. Revoking all sessions in token family.`);
             // Revoke all tokens belonging to this family
-            await refreshToken_model_1.RefreshToken.updateMany({ familyId: tokenRecord.familyId, revokedAt: null }, { revokedAt: new Date() });
+            await models_1.RefreshToken.updateMany({ familyId: tokenRecord.familyId, revokedAt: null }, { revokedAt: new Date() });
             throw apiError_1.ApiError.unauthorized('Invalid or revoked refresh token', 'INVALID_REFRESH_TOKEN');
         }
         // Validation
         if (!tokenRecord || tokenRecord.expiresAt.getTime() <= Date.now()) {
             throw apiError_1.ApiError.unauthorized('Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN');
         }
-        const user = await user_model_1.User.findById(tokenRecord.userId);
+        const user = await models_1.User.findById(tokenRecord.userId);
         if (!user || !user.isActive) {
             tokenRecord.revokedAt = new Date();
             await tokenRecord.save();
@@ -108,7 +107,7 @@ async function refresh(req, res, next) {
         tokenRecord.revokedAt = new Date();
         tokenRecord.replacedByTokenHash = newTokenHash;
         await tokenRecord.save();
-        await refreshToken_model_1.RefreshToken.create({
+        await models_1.RefreshToken.create({
             userId: user._id,
             tokenHash: newTokenHash,
             familyId: tokenRecord.familyId,
@@ -130,7 +129,7 @@ async function logout(req, res, next) {
         const { refreshToken } = req.body;
         if (refreshToken && typeof refreshToken === 'string') {
             const presentedTokenHash = (0, jwt_util_1.hashToken)(refreshToken);
-            await refreshToken_model_1.RefreshToken.findOneAndUpdate({ tokenHash: presentedTokenHash, revokedAt: null }, { revokedAt: new Date() });
+            await models_1.RefreshToken.findOneAndUpdate({ tokenHash: presentedTokenHash, revokedAt: null }, { revokedAt: new Date() });
         }
         apiResponse_1.ApiResponse.success(res, 200, 'Logged out successfully');
     }
@@ -143,7 +142,7 @@ async function logoutAll(req, res, next) {
         if (!req.user || !req.user.id) {
             throw apiError_1.ApiError.unauthorized('Not authenticated', 'UNAUTHORIZED');
         }
-        await refreshToken_model_1.RefreshToken.updateMany({ userId: req.user.id, revokedAt: null }, { revokedAt: new Date() });
+        await models_1.RefreshToken.updateMany({ userId: req.user.id, revokedAt: null }, { revokedAt: new Date() });
         apiResponse_1.ApiResponse.success(res, 200, 'All sessions logged out successfully');
     }
     catch (error) {

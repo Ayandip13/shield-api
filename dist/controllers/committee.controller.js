@@ -7,7 +7,7 @@ exports.updateCommitteeMember = updateCommitteeMember;
 exports.updateCommitteeStatus = updateCommitteeStatus;
 exports.getCommitteeMe = getCommitteeMe;
 const committee_service_1 = require("../services/committee.service");
-const refreshToken_model_1 = require("../models/refreshToken.model");
+const models_1 = require("../models");
 const apiResponse_1 = require("../utils/apiResponse");
 const apiError_1 = require("../utils/apiError");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -103,7 +103,7 @@ async function updateCommitteeStatus(req, res, next) {
         }
         const member = await committee_service_1.CommitteeService.updateCommitteeStatus(id, providerId, isActive);
         if (!isActive) {
-            await refreshToken_model_1.RefreshToken.updateMany({ userId: id, revokedAt: null }, { revokedAt: new Date() });
+            await models_1.RefreshToken.updateMany({ userId: id, revokedAt: null }, { revokedAt: new Date() });
         }
         apiResponse_1.ApiResponse.success(res, 200, `Committee member status updated to ${isActive ? 'active' : 'inactive'}`, member);
     }

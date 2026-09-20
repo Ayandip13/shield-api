@@ -3,13 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserProfile = getUserProfile;
 exports.updateUserProfile = updateUserProfile;
 exports.changeUserPassword = changeUserPassword;
-const user_model_1 = require("../models/user.model");
-const refreshToken_model_1 = require("../models/refreshToken.model");
+const models_1 = require("../models");
 require("../models/provider.model");
 require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
 async function getUserProfile(userId) {
-    const user = await user_model_1.User.findById(userId)
+    const user = await models_1.User.findById(userId)
         .populate('providerId', 'name')
         .populate('buildingId', 'name address')
         .lean();
@@ -72,7 +71,7 @@ async function getUserProfile(userId) {
     return baseProfile;
 }
 async function updateUserProfile(userId, data) {
-    const user = await user_model_1.User.findById(userId);
+    const user = await models_1.User.findById(userId);
     if (!user || !user.isActive) {
         throw apiError_1.ApiError.unauthorized('User account not found or deactivated.', 'USER_INACTIVE');
     }
@@ -96,7 +95,7 @@ async function changeUserPassword(userId, currentPassword, newPassword) {
     if (newPassword.length < 8) {
         throw apiError_1.ApiError.badRequest('New password must be at least 8 characters long.', 'WEAK_PASSWORD');
     }
-    const user = await user_model_1.User.findById(userId).select('+passwordHash');
+    const user = await models_1.User.findById(userId).select('+passwordHash');
     if (!user || !user.isActive) {
         throw apiError_1.ApiError.unauthorized('User account not found or deactivated.', 'USER_INACTIVE');
     }
@@ -107,6 +106,6 @@ async function changeUserPassword(userId, currentPassword, newPassword) {
     user.passwordHash = newPassword;
     await user.save();
     // Revoke all active refresh sessions for security on password change
-    await refreshToken_model_1.RefreshToken.updateMany({ userId: user._id, revokedAt: null }, { revokedAt: new Date() });
+    await models_1.RefreshToken.updateMany({ userId: user._id, revokedAt: null }, { revokedAt: new Date() });
     return { message: 'Password changed successfully.' };
 }
