@@ -7,7 +7,12 @@ class HealthController {
     static checkHealth(_req, res, next) {
         try {
             const healthData = health_service_1.HealthService.getHealthData();
-            apiResponse_1.ApiResponse.success(res, 200, 'Security Management Backend API operational', healthData);
+            const isConnected = healthData.database.connected;
+            const statusCode = isConnected ? 200 : 503;
+            const message = isConnected
+                ? 'Security Management Backend API operational'
+                : 'Security Management Backend API degraded - Database disconnected';
+            apiResponse_1.ApiResponse.success(res, statusCode, message, healthData);
         }
         catch (error) {
             next(error);

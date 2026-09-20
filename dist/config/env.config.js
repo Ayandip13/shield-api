@@ -30,13 +30,13 @@ function validateEnv() {
         missing.push('JWT_SECRET');
     if (exports.envConfig.isProduction) {
         if (!process.env.JWT_SECRET || exports.envConfig.jwtSecret === 'super_secret_dev_jwt_key_secushield_2026') {
-            missing.push('JWT_SECRET (cannot use dev default in production)');
+            missing.push('JWT_SECRET (must provide strong custom secret in production)');
         }
         if (!process.env.MONGODB_URI || exports.envConfig.mongodbUri.includes('localhost') || exports.envConfig.mongodbUri.includes('127.0.0.1')) {
-            missing.push('MONGODB_URI (cannot use localhost in production)');
+            missing.push('MONGODB_URI (cannot use localhost MongoDB URI in production)');
         }
         if (!process.env.CORS_ORIGIN || exports.envConfig.corsOrigin === '*') {
-            console.warn('[SECURITY WARNING] CORS_ORIGIN is set to wildcard (*) in production. Consider configuring specific allowed origins.');
+            console.warn('[SECURITY WARNING] CORS_ORIGIN is set to wildcard (*) in production. For web browsers, configure specific origins (e.g. https://yourdomain.com).');
         }
     }
     if (missing.length > 0) {

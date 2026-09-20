@@ -15,7 +15,7 @@ export class HealthService {
     const isConnected = dbStateCode === 1;
 
     return {
-      status: 'healthy',
+      status: isConnected ? 'healthy' : 'degraded',
       uptime: process.uptime(),
       environment: envConfig.nodeEnv,
       database: {

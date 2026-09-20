@@ -10,7 +10,11 @@ const database_1 = require("./config/database");
 const logger_1 = require("./utils/logger");
 async function startServer() {
     // Initialize Database Connection Foundation
-    await (0, database_1.connectDatabase)();
+    const isConnected = await (0, database_1.connectDatabase)();
+    if (!isConnected && env_config_1.envConfig.isProduction) {
+        logger_1.logger.error('[Fatal] Database connection failed during production startup. Exiting process.');
+        process.exit(1);
+    }
     const app = (0, app_1.createApp)();
     const server = app.listen(env_config_1.envConfig.port, () => {
         logger_1.logger.info(`Server running in [${env_config_1.envConfig.nodeEnv}] mode on port ${env_config_1.envConfig.port}`);

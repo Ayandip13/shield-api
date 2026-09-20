@@ -26,13 +26,13 @@ export function validateEnv(): void {
 
   if (envConfig.isProduction) {
     if (!process.env.JWT_SECRET || envConfig.jwtSecret === 'super_secret_dev_jwt_key_secushield_2026') {
-      missing.push('JWT_SECRET (cannot use dev default in production)');
+      missing.push('JWT_SECRET (must provide strong custom secret in production)');
     }
     if (!process.env.MONGODB_URI || envConfig.mongodbUri.includes('localhost') || envConfig.mongodbUri.includes('127.0.0.1')) {
-      missing.push('MONGODB_URI (cannot use localhost in production)');
+      missing.push('MONGODB_URI (cannot use localhost MongoDB URI in production)');
     }
     if (!process.env.CORS_ORIGIN || envConfig.corsOrigin === '*') {
-      console.warn('[SECURITY WARNING] CORS_ORIGIN is set to wildcard (*) in production. Consider configuring specific allowed origins.');
+      console.warn('[SECURITY WARNING] CORS_ORIGIN is set to wildcard (*) in production. For web browsers, configure specific origins (e.g. https://yourdomain.com).');
     }
   }
 

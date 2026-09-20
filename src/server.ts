@@ -6,7 +6,11 @@ import { logger } from './utils/logger';
 
 async function startServer() {
   // Initialize Database Connection Foundation
-  await connectDatabase();
+  const isConnected = await connectDatabase();
+  if (!isConnected && envConfig.isProduction) {
+    logger.error('[Fatal] Database connection failed during production startup. Exiting process.');
+    process.exit(1);
+  }
 
   const app = createApp();
 

@@ -17,7 +17,7 @@ class HealthService {
         const dbStateCode = mongoose_1.default.connection.readyState;
         const isConnected = dbStateCode === 1;
         return {
-            status: 'healthy',
+            status: isConnected ? 'healthy' : 'degraded',
             uptime: process.uptime(),
             environment: env_config_1.envConfig.nodeEnv,
             database: {
