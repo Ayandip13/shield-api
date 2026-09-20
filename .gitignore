@@ -1,2 +1,5 @@
 node_modules
 .env
+npm_cache
+scratch/
+dist/
