@@ -81,6 +81,14 @@ async function runIntegrationTests() {
       isActive: true,
     });
 
+    const provider2 = await Provider.create({
+      name: 'Test Provider Beta Inc.',
+      email: 'contact.beta@test.secushield.com',
+      phone: '+1-555-0002',
+      address: '200 Test St',
+      isActive: true,
+    });
+
     const guardUser = await User.create({
       name: 'Test Guard Alpha',
       email: 'guard.alpha@test.secushield.com',
@@ -90,6 +98,18 @@ async function runIntegrationTests() {
       providerId: provider._id,
       buildingId: building._id,
       employeeId: 'EMP-001',
+      monthlySalary: 18000,
+      isActive: true,
+    });
+
+    const guardUser2 = await User.create({
+      name: 'Test Guard Beta',
+      email: 'guard.beta@test.secushield.com',
+      phone: '+1-555-8889',
+      passwordHash: 'GuardPass@123',
+      role: 'guard',
+      providerId: provider2._id,
+      monthlySalary: 25000,
       isActive: true,
     });
 
@@ -245,6 +265,166 @@ async function runIntegrationTests() {
     // Scenario 4.3: Missing Authorization Header
     const noAuthRes = await fetch(`${baseUrl}/profile`);
     assert(noAuthRes.status === 401, 'Unauthenticated request to protected endpoint returns 401');
+
+    console.log('\n[5] Salary Visibility & Role-Based Access Control Suite');
+
+    // 1. Provider Admin can view own provider guard salary
+    const adminGetGuardRes = await fetch(`${baseUrl}/guards/${guardUser._id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const adminGetGuardData = (await adminGetGuardRes.json()) as any;
+    assert(
+      adminGetGuardRes.status === 200 && adminGetGuardData.data?.monthlySalary === 18000,
+      'Provider Admin can view own provider guard salary'
+    );
+
+    const adminGetGuardsListRes = await fetch(`${baseUrl}/guards`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const adminGetGuardsListData = (await adminGetGuardsListRes.json()) as any;
+    const foundGuardInList = adminGetGuardsListData.data?.find((g: any) => g._id === (guardUser._id as any).toString());
+    assert(
+      adminGetGuardsListRes.status === 200 && foundGuardInList?.monthlySalary === 18000,
+      'Provider Admin can view salaries in guards list'
+    );
+
+    // 2. Provider Admin cannot view another provider's guard salary
+    const adminCrossTenantRes = await fetch(`${baseUrl}/guards/${guardUser2._id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    assert(
+      adminCrossTenantRes.status === 403,
+      'Provider Admin cannot view guard belonging to another provider (403 Forbidden)'
+    );
+
+    // 3. Guard can view own salary
+    const guardMeRes = await fetch(`${baseUrl}/guards/me`, {
+      headers: { Authorization: `Bearer ${guardToken}` },
+    });
+    const guardMeData = (await guardMeRes.json()) as any;
+    assert(
+      guardMeRes.status === 200 && guardMeData.data?.monthlySalary === 18000,
+      'Guard can view own salary via /guards/me'
+    );
+
+    const guardProfileRes = await fetch(`${baseUrl}/profile`, {
+      headers: { Authorization: `Bearer ${guardToken}` },
+    });
+    const guardProfileData = (await guardProfileRes.json()) as any;
+    assert(
+      guardProfileRes.status === 200 && guardProfileData.data?.monthlySalary === 18000,
+      'Guard can view own salary via /profile'
+    );
+
+    // 4. Guard cannot view another guard's salary
+    const guardListAttemptRes = await fetch(`${baseUrl}/guards`, {
+      headers: { Authorization: `Bearer ${guardToken}` },
+    });
+    assert(
+      guardListAttemptRes.status === 403,
+      'Guard cannot query guards list (403 Forbidden)'
+    );
+
+    const guardDetailAttemptRes = await fetch(`${baseUrl}/guards/${guardUser2._id}`, {
+      headers: { Authorization: `Bearer ${guardToken}` },
+    });
+    assert(
+      guardDetailAttemptRes.status === 403,
+      'Guard cannot query another guard details (403 Forbidden)'
+    );
+
+    // 5. Committee cannot view salary
+    const committeeProfileRes = await fetch(`${baseUrl}/profile`, {
+      headers: { Authorization: `Bearer ${committeeToken}` },
+    });
+    const committeeProfileData = (await committeeProfileRes.json()) as any;
+    assert(
+      committeeProfileRes.status === 200 && committeeProfileData.data?.monthlySalary === undefined,
+      'Committee profile response does NOT contain monthlySalary'
+    );
+
+    const committeeGuardsRes = await fetch(`${baseUrl}/guards`, {
+      headers: { Authorization: `Bearer ${committeeToken}` },
+    });
+    assert(
+      committeeGuardsRes.status === 403,
+      'Committee user cannot access /guards endpoint (403 Forbidden)'
+    );
+
+    // 6. Guard cannot modify their own salary
+    const guardModifySalaryRes = await fetch(`${baseUrl}/profile`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${guardToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthlySalary: 999999 }),
+    });
+    const guardCheckAfterRes = await fetch(`${baseUrl}/profile`, {
+      headers: { Authorization: `Bearer ${guardToken}` },
+    });
+    const guardCheckAfterData = (await guardCheckAfterRes.json()) as any;
+    assert(
+      guardModifySalaryRes.status === 200 && guardCheckAfterData.data?.monthlySalary === 18000,
+      'Guard cannot modify their own salary via /profile'
+    );
+
+    const guardPatchGuardRes = await fetch(`${baseUrl}/guards/${guardUser._id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${guardToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthlySalary: 999999 }),
+    });
+    assert(
+      guardPatchGuardRes.status === 403,
+      'Guard cannot call /guards/:id endpoint to modify salary (403 Forbidden)'
+    );
+
+    // 7. Committee cannot modify salary
+    const committeePatchGuardRes = await fetch(`${baseUrl}/guards/${guardUser._id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${committeeToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthlySalary: 999999 }),
+    });
+    assert(
+      committeePatchGuardRes.status === 403,
+      'Committee user cannot modify guard salary (403 Forbidden)'
+    );
+
+    // 8. Provider Admin can update salary
+    const adminUpdateSalaryRes = await fetch(`${baseUrl}/guards/${guardUser._id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthlySalary: 22000 }),
+    });
+    const adminUpdateSalaryData = (await adminUpdateSalaryRes.json()) as any;
+    assert(
+      adminUpdateSalaryRes.status === 200 && adminUpdateSalaryData.data?.monthlySalary === 22000,
+      'Provider Admin can update guard monthly salary'
+    );
+
+    // 9. Mass-assignment attempts cannot escalate permissions or tenant ownership
+    const massAssignRes = await fetch(`${baseUrl}/guards/${guardUser._id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'provider_admin', providerId: provider2._id.toString() }),
+    });
+    assert(
+      massAssignRes.status === 400,
+      'Mass-assignment attempts to modify role or providerId are rejected with 400'
+    );
+
+    // 10. Unauthenticated salary access returns 401
+    const unauthSalaryRes = await fetch(`${baseUrl}/guards/${guardUser._id}`);
+    assert(
+      unauthSalaryRes.status === 401,
+      'Unauthenticated request for guard details returns 401'
+    );
+
+    // 11. Unauthorized salary access returns appropriate 403/404
+    const unauthOtherTenantRes = await fetch(`${baseUrl}/guards/${guardUser2._id}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    assert(
+      unauthOtherTenantRes.status === 403,
+      'Unauthorized cross-tenant salary access returns 403'
+    );
 
     // Clean up test records
     await User.deleteMany({ email: { $regex: /@test\.secushield/ } });

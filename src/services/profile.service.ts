@@ -44,6 +44,7 @@ export async function getUserProfile(userId: string) {
       employeeId: user.employeeId || null,
       designation: user.designation || 'Security Guard',
       joiningDate: user.joiningDate || null,
+      monthlySalary: user.monthlySalary !== undefined && user.monthlySalary !== null ? user.monthlySalary : null,
       building: buildingObj,
     };
   }
