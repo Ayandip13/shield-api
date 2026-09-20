@@ -1,4 +1,5 @@
 import { User } from '../models/user.model';
+import { RefreshToken } from '../models/refreshToken.model';
 import '../models/provider.model';
 import '../models/building.model';
 import { ApiError } from '../utils/apiError';
@@ -134,6 +135,12 @@ export async function changeUserPassword(
 
   user.passwordHash = newPassword;
   await user.save();
+
+  // Revoke all active refresh sessions for security on password change
+  await RefreshToken.updateMany(
+    { userId: user._id, revokedAt: null },
+    { revokedAt: new Date() }
+  );
 
   return { message: 'Password changed successfully.' };
 }

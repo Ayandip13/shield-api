@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { GuardService } from '../services/guard.service';
+import { RefreshToken } from '../models/refreshToken.model';
 import { ApiResponse } from '../utils/apiResponse';
 import { ApiError } from '../utils/apiError';
 
@@ -131,6 +132,12 @@ export async function updateGuardStatus(req: Request, res: Response, next: NextF
     }
 
     const guard = await GuardService.updateGuardStatus(id, providerId, isActive);
+    if (!isActive) {
+      await RefreshToken.updateMany(
+        { userId: id, revokedAt: null },
+        { revokedAt: new Date() }
+      );
+    }
     ApiResponse.success(res, 200, `Guard status updated to ${isActive ? 'active' : 'inactive'}`, guard);
   } catch (error) {
     next(error);

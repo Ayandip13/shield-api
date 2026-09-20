@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt.util';
+import { verifyAccessToken } from '../utils/jwt.util';
 import { User } from '../models/user.model';
 import { ApiError } from '../utils/apiError';
 
@@ -13,7 +13,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     const token = authHeader.split(' ')[1];
     let decoded;
     try {
-      decoded = verifyToken(token);
+      decoded = verifyAccessToken(token);
     } catch (err) {
       throw ApiError.unauthorized('Invalid or expired authentication token.', 'INVALID_TOKEN');
     }

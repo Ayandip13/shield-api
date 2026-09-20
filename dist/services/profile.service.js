@@ -4,6 +4,7 @@ exports.getUserProfile = getUserProfile;
 exports.updateUserProfile = updateUserProfile;
 exports.changeUserPassword = changeUserPassword;
 const user_model_1 = require("../models/user.model");
+const refreshToken_model_1 = require("../models/refreshToken.model");
 require("../models/provider.model");
 require("../models/building.model");
 const apiError_1 = require("../utils/apiError");
@@ -105,5 +106,7 @@ async function changeUserPassword(userId, currentPassword, newPassword) {
     }
     user.passwordHash = newPassword;
     await user.save();
+    // Revoke all active refresh sessions for security on password change
+    await refreshToken_model_1.RefreshToken.updateMany({ userId: user._id, revokedAt: null }, { revokedAt: new Date() });
     return { message: 'Password changed successfully.' };
 }

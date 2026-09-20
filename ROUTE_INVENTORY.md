@@ -15,7 +15,10 @@ All endpoints are mounted under the `/api/v1` base route and enforce standardize
 ## 2. Authentication (`/api/v1/auth`)
 | Method | Endpoint | Allowed Roles | Description |
 |---|---|---|---|
-| `POST` | `/api/v1/auth/login` | Public (Rate Limited: 10/15m) | Authenticates credentials, returns JWT & user info |
+| `POST` | `/api/v1/auth/login` | Public (Rate Limited: 10/15m) | Authenticates credentials, returns short-lived Access Token (`15m`) & Opaque Refresh Token (`30d`) |
+| `POST` | `/api/v1/auth/refresh` | Public (Rate Limited: 10/15m) | Validates refresh token, executes rotation, detects reuse attacks, returns new token pair |
+| `POST` | `/api/v1/auth/logout` | Public | Revokes specified refresh token session in MongoDB |
+| `POST` | `/api/v1/auth/logout-all` | Authenticated | Revokes all active refresh sessions across devices for authenticated user |
 | `GET` | `/api/v1/auth/me` | Authenticated | Returns current authenticated user context |
 
 ---

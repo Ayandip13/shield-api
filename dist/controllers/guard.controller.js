@@ -7,6 +7,7 @@ exports.updateGuard = updateGuard;
 exports.updateGuardStatus = updateGuardStatus;
 exports.getGuardMe = getGuardMe;
 const guard_service_1 = require("../services/guard.service");
+const refreshToken_model_1 = require("../models/refreshToken.model");
 const apiResponse_1 = require("../utils/apiResponse");
 const apiError_1 = require("../utils/apiError");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -123,6 +124,9 @@ async function updateGuardStatus(req, res, next) {
             throw apiError_1.ApiError.badRequest('isActive must be a boolean value', 'INVALID_STATUS');
         }
         const guard = await guard_service_1.GuardService.updateGuardStatus(id, providerId, isActive);
+        if (!isActive) {
+            await refreshToken_model_1.RefreshToken.updateMany({ userId: id, revokedAt: null }, { revokedAt: new Date() });
+        }
         apiResponse_1.ApiResponse.success(res, 200, `Guard status updated to ${isActive ? 'active' : 'inactive'}`, guard);
     }
     catch (error) {

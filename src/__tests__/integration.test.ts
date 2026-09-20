@@ -135,7 +135,7 @@ async function runIntegrationTests() {
       isActive: false,
     });
 
-    console.log('[1] Authentication Suite');
+    console.log('[1] Authentication & Token Lifecycle Suite');
     // Scenario 1.1: Valid Login
     const loginRes = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
@@ -143,8 +143,15 @@ async function runIntegrationTests() {
       body: JSON.stringify({ email: 'admin@test.secushield.com', password: 'AdminPass@123' }),
     });
     const loginData = (await loginRes.json()) as any;
-    assert(loginRes.status === 200 && loginData.success && !!loginData.data.token, 'Valid login returns JWT token and user info');
-    const adminToken = loginData.data.token;
+    assert(
+      loginRes.status === 200 &&
+        loginData.success &&
+        !!loginData.data.accessToken &&
+        !!loginData.data.refreshToken,
+      'Valid login returns both accessToken and refreshToken'
+    );
+    const adminToken = loginData.data.accessToken;
+    let adminRefreshToken = loginData.data.refreshToken;
 
     // Guard login
     const guardLoginRes = await fetch(`${baseUrl}/auth/login`, {
@@ -154,7 +161,8 @@ async function runIntegrationTests() {
     });
     const guardLoginData = (await guardLoginRes.json()) as any;
     assert(guardLoginRes.status === 200 && guardLoginData.success, 'Guard login returns success');
-    const guardToken = guardLoginData.data.token;
+    const guardToken = guardLoginData.data.accessToken;
+    const guardRefreshToken = guardLoginData.data.refreshToken;
 
     // Committee login
     const committeeLoginRes = await fetch(`${baseUrl}/auth/login`, {
@@ -164,7 +172,7 @@ async function runIntegrationTests() {
     });
     const committeeLoginData = (await committeeLoginRes.json()) as any;
     assert(committeeLoginRes.status === 200 && committeeLoginData.success, 'Committee login returns success');
-    const committeeToken = committeeLoginData.data.token;
+    const committeeToken = committeeLoginData.data.accessToken;
 
     // Scenario 1.2: Invalid Password
     const badPassRes = await fetch(`${baseUrl}/auth/login`, {
@@ -187,6 +195,64 @@ async function runIntegrationTests() {
       headers: { Authorization: 'Bearer invalid.fake.token' },
     });
     assert(invalidTokenRes.status === 401, 'Invalid Bearer token returns 401 Unauthorized');
+
+    // Scenario 1.5: Refresh Token Rotation
+    const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: adminRefreshToken }),
+    });
+    const refreshData = (await refreshRes.json()) as any;
+    assert(
+      refreshRes.status === 200 &&
+        refreshData.success &&
+        !!refreshData.data.accessToken &&
+        !!refreshData.data.refreshToken,
+      'POST /auth/refresh returns new accessToken and new refreshToken'
+    );
+    const oldAdminRefreshToken = adminRefreshToken;
+    adminRefreshToken = refreshData.data.refreshToken;
+
+    // Scenario 1.6: Reuse Detection (Reusing old rotated refresh token should trigger family revocation)
+    const reuseRes = await fetch(`${baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: oldAdminRefreshToken }),
+    });
+    assert(reuseRes.status === 401, 'Reusing rotated refresh token is rejected with 401');
+
+    // Sub-check: New refresh token should also now be revoked due to family wipe
+    const postReuseRefreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: adminRefreshToken }),
+    });
+    assert(postReuseRefreshRes.status === 401, 'Family wipe revokes active refresh tokens after reuse attempt');
+
+    // Re-login Admin for remaining test suite
+    const reLoginAdmin = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@test.secushield.com', password: 'AdminPass@123' }),
+    });
+    const reLoginAdminData = (await reLoginAdmin.json()) as any;
+    const freshAdminToken = reLoginAdminData.data.accessToken;
+
+    // Scenario 1.7: Logout Endpoint
+    const logoutRes = await fetch(`${baseUrl}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: guardRefreshToken }),
+    });
+    assert(logoutRes.status === 200, 'POST /auth/logout succeeds');
+
+    // Revoked Guard Refresh Token cannot refresh
+    const guardRefreshAfterLogout = await fetch(`${baseUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: guardRefreshToken }),
+    });
+    assert(guardRefreshAfterLogout.status === 401, 'Revoked refresh token cannot refresh');
 
     console.log('\n[2] Role-Based Access Control (RBAC) & Tenant Scoping');
     // Scenario 2.1: Provider Admin can list buildings

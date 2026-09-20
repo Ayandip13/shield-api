@@ -21,3 +21,4 @@ __exportStar(require("./shift.model"), exports);
 __exportStar(require("./attendance.model"), exports);
 __exportStar(require("./entryLog.model"), exports);
 __exportStar(require("./notification.model"), exports);
+__exportStar(require("./refreshToken.model"), exports);

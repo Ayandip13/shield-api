@@ -13,7 +13,7 @@ async function authenticate(req, res, next) {
         const token = authHeader.split(' ')[1];
         let decoded;
         try {
-            decoded = (0, jwt_util_1.verifyToken)(token);
+            decoded = (0, jwt_util_1.verifyAccessToken)(token);
         }
         catch (err) {
             throw apiError_1.ApiError.unauthorized('Invalid or expired authentication token.', 'INVALID_TOKEN');

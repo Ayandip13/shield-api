@@ -42,8 +42,9 @@ function createApp() {
     if (env_config_1.envConfig.nodeEnv !== 'test') {
         app.use((0, morgan_1.default)('dev'));
     }
-    // Login Brute Force Rate Limiter on Auth Endpoint
+    // Login & Refresh Brute Force Rate Limiter on Auth Endpoints
     app.use('/api/v1/auth/login', rateLimiter_middleware_1.loginRateLimiter);
+    app.use('/api/v1/auth/refresh', rateLimiter_middleware_1.loginRateLimiter);
     // General API Rate Limiter
     app.use('/api/v1', rateLimiter_middleware_1.apiRateLimiter);
     // API v1 Routes

@@ -11,7 +11,9 @@ export const envConfig = {
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/security_management',
   corsOrigin: process.env.CORS_ORIGIN || '*',
   jwtSecret: process.env.JWT_SECRET || 'super_secret_dev_jwt_key_secushield_2026',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || process.env.JWT_EXPIRES_IN || '15m',
+  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '30d',
   trustProxy: process.env.TRUST_PROXY === 'false' ? false : true,
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins
   loginRateLimitMax: parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '10', 10), // 10 attempts

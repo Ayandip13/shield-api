@@ -49,8 +49,9 @@ export function createApp(): Application {
     app.use(morgan('dev'));
   }
 
-  // Login Brute Force Rate Limiter on Auth Endpoint
+  // Login & Refresh Brute Force Rate Limiter on Auth Endpoints
   app.use('/api/v1/auth/login', loginRateLimiter);
+  app.use('/api/v1/auth/refresh', loginRateLimiter);
 
   // General API Rate Limiter
   app.use('/api/v1', apiRateLimiter);

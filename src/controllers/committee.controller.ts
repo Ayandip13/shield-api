@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { CommitteeService } from '../services/committee.service';
+import { RefreshToken } from '../models/refreshToken.model';
 import { ApiResponse } from '../utils/apiResponse';
 import { ApiError } from '../utils/apiError';
 
@@ -107,6 +108,12 @@ export async function updateCommitteeStatus(req: Request, res: Response, next: N
     }
 
     const member = await CommitteeService.updateCommitteeStatus(id, providerId, isActive);
+    if (!isActive) {
+      await RefreshToken.updateMany(
+        { userId: id, revokedAt: null },
+        { revokedAt: new Date() }
+      );
+    }
     ApiResponse.success(res, 200, `Committee member status updated to ${isActive ? 'active' : 'inactive'}`, member);
   } catch (error) {
     next(error);
