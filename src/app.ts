@@ -56,6 +56,24 @@ export function createApp(): Application {
   // General API Rate Limiter
   app.use('/api/v1', apiRateLimiter);
 
+  // Root health & welcome endpoints (avoids 404 on browser/Render root checks)
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'SecuShield Security Management API is running.',
+      apiV1: '/api/v1',
+      health: '/api/v1/health',
+    });
+  });
+
+  app.get('/api/v1', (_req, res) => {
+    res.status(200).json({
+      success: true,
+      message: 'SecuShield API v1 Root',
+      health: '/api/v1/health',
+    });
+  });
+
   // API v1 Routes
   app.use('/api/v1', v1Router);
 
