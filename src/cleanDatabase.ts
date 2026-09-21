@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { envConfig } from './config/env.config';
-import { Provider, User, Building, Shift, Attendance, EntryLog, Notification } from './models';
+import { Provider, User, Building, Shift, Attendance, EntryLog, Notification, RefreshToken } from './models';
 import { logger } from './utils/logger';
 
 async function cleanAndResetDatabase(): Promise<void> {
@@ -10,6 +10,7 @@ async function cleanAndResetDatabase(): Promise<void> {
     logger.info('Connected to MongoDB.');
 
     logger.info('Wiping all dummy data and collections...');
+    await RefreshToken.deleteMany({});
     await Attendance.deleteMany({});
     await EntryLog.deleteMany({});
     await Notification.deleteMany({});
