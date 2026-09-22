@@ -135,4 +135,22 @@ export class BuildingService {
 
     return building;
   }
+
+  /**
+   * Delete a building by ID
+   */
+  static async deleteBuilding(buildingId: string, providerId: string): Promise<void> {
+    const building = await this.getBuildingById(buildingId, providerId);
+    await Building.deleteOne({ _id: building._id });
+
+    NotificationService.createNotification({
+      providerId,
+      buildingId: building._id,
+      type: 'building',
+      title: 'Building Deleted',
+      message: `Building '${building.name}' was deleted.`,
+      relatedEntityType: 'Building',
+      relatedEntityId: building._id,
+    });
+  }
 }

@@ -132,3 +132,15 @@ export async function updateBuildingStatus(req: Request, res: Response, next: Ne
     next(error);
   }
 }
+
+export async function deleteBuilding(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = req.params.id as string;
+    const providerId = req.user!.providerId.toString();
+
+    await BuildingService.deleteBuilding(id, providerId);
+    ApiResponse.success(res, 200, 'Building deleted successfully', null);
+  } catch (error) {
+    next(error);
+  }
+}

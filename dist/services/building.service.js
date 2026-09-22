@@ -95,5 +95,21 @@ class BuildingService {
         });
         return building;
     }
+    /**
+     * Delete a building by ID
+     */
+    static async deleteBuilding(buildingId, providerId) {
+        const building = await this.getBuildingById(buildingId, providerId);
+        await building_model_1.Building.deleteOne({ _id: building._id });
+        notification_service_1.NotificationService.createNotification({
+            providerId,
+            buildingId: building._id,
+            type: 'building',
+            title: 'Building Deleted',
+            message: `Building '${building.name}' was deleted.`,
+            relatedEntityType: 'Building',
+            relatedEntityId: building._id,
+        });
+    }
 }
 exports.BuildingService = BuildingService;

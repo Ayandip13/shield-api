@@ -5,6 +5,7 @@ exports.getBuildingById = getBuildingById;
 exports.createBuilding = createBuilding;
 exports.updateBuilding = updateBuilding;
 exports.updateBuildingStatus = updateBuildingStatus;
+exports.deleteBuilding = deleteBuilding;
 const building_service_1 = require("../services/building.service");
 const apiResponse_1 = require("../utils/apiResponse");
 const apiError_1 = require("../utils/apiError");
@@ -109,6 +110,17 @@ async function updateBuildingStatus(req, res, next) {
         }
         const building = await building_service_1.BuildingService.updateBuildingStatus(id, providerId, isActive);
         apiResponse_1.ApiResponse.success(res, 200, `Building ${isActive ? 'activated' : 'deactivated'} successfully`, building);
+    }
+    catch (error) {
+        next(error);
+    }
+}
+async function deleteBuilding(req, res, next) {
+    try {
+        const id = req.params.id;
+        const providerId = req.user.providerId.toString();
+        await building_service_1.BuildingService.deleteBuilding(id, providerId);
+        apiResponse_1.ApiResponse.success(res, 200, 'Building deleted successfully', null);
     }
     catch (error) {
         next(error);

@@ -5,6 +5,7 @@ import {
   createBuilding,
   updateBuilding,
   updateBuildingStatus,
+  deleteBuilding,
 } from '../../controllers/building.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/authorize.middleware';
@@ -20,5 +21,6 @@ router.post('/', createBuilding);
 router.get('/:id', validateObjectId('id'), getBuildingById);
 router.patch('/:id', validateObjectId('id'), updateBuilding);
 router.patch('/:id/status', validateObjectId('id'), updateBuildingStatus);
+router.delete('/:id', validateObjectId('id'), deleteBuilding);
 
 export default router;

@@ -13,4 +13,5 @@ router.post('/', building_controller_1.createBuilding);
 router.get('/:id', (0, validateObjectId_middleware_1.validateObjectId)('id'), building_controller_1.getBuildingById);
 router.patch('/:id', (0, validateObjectId_middleware_1.validateObjectId)('id'), building_controller_1.updateBuilding);
 router.patch('/:id/status', (0, validateObjectId_middleware_1.validateObjectId)('id'), building_controller_1.updateBuildingStatus);
+router.delete('/:id', (0, validateObjectId_middleware_1.validateObjectId)('id'), building_controller_1.deleteBuilding);
 exports.default = router;
