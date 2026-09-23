@@ -261,6 +261,13 @@ async function runIntegrationTests() {
     });
     assert(bListRes.status === 200, 'Provider Admin can access /buildings');
 
+    // Scenario 2.1b: Provider Admin can delete a building
+    const bDeleteRes = await fetch(`${baseUrl}/buildings/${buildingBeta._id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    assert(bDeleteRes.status === 200, 'Provider Admin can delete a building');
+
     // Scenario 2.2: Guard cannot create a building
     const guardCreateBRes = await fetch(`${baseUrl}/buildings`, {
       method: 'POST',
